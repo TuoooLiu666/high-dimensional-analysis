@@ -1,0 +1,220 @@
+---
+title: "PLS"
+date: "`r Sys.Date()`"
+author: "LT"
+output: 
+  html_document:
+    toc: true
+    theme: journal
+    code_folding: show
+bibliography: reference.bib  
+nocite: '@*'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits = 4)
+pacman::p_load(pls)
+```
+
+## Introduction
+Multivariate regression methods like Principal Component Regression (PCR) and Partial Least
+Squares Regression (PLS) enjoy wide popularity in a wide range of research fields. 
+
+In traditional multivariate linear regression (MLR), the least-squares solution for
+$$
+\tag{1}
+\begin{equation}
+\vec{Y}=\mathbb{X}\vec{\beta}+\vec{\epsilon}
+\end{equation}
+$$
+is given by 
+$$
+\tag{2}
+\begin{equation}
+\hat{\vec{\beta}}=(\mathbb{X}^T\mathbb{X})^{-1}\mathbb{X}^T\mathbb{Y}
+\end{equation}
+$$
+The problem is that $\mathbb{X}^T\mathbb{X}$ is often singular, either because the number of variables in $\mathbb{X}$ exceeds the number of observations, or due to linear dependence of the feature vector set. One solution is, like the one provided by PCR, first to decompose $\mathbb{X}$ and then regress $\mathbb{Z}$ (a small number of eigenvectors with large eigenvalues chosen by cross-validation) on $\mathbb{Y}$. In PCR, it only takes into account information in $\mathbb{X}$, and therefore may be sub-optimal for prediction purposes. 
+
+Here in PCR, the selection of the principal components to incorporate in the model is not supervised by the outcome variable. hence nothing guarantees that the principal components, which explain $\mathbb{X}$, are relevant to $\mathbb{Y}$. For example, one algorithm called SIMPLS [@DEJONG1993251], chooses eigenvectors and eigenvalues in such a way to describe as much as possible of the covariance between $\mathbb{X}$ and $\mathbb{Y}$, where PCR concentrates on the *variance* of $\mathbb{X}$
+
+
+`pls` regression finds components from X that are also relevant for Y. Specifically, `pls` regression searches for a set of components (called latent vectors or eigenvectors) that performs a simultaneous decomposition of X and Y with the *constraint* that these components explain as much as possible of the **covariance** between $\mathbb{X}$ and $\mathbb{Y}$ [@JSSv018i02].
+
+### pls1/2
+Univariate response vector case is called pls1, and multivariate response matrix case is called pls2. 
+
+ 
+
+
+## Algorithm
+### Objective function
+Step 1: Find the directions of a pair of unit vectors, $\vec{v} \in \mathbb{R}^{m}$ in the input space and $\vec{w} \in \mathbb{R}^{l}$ in the output space, that maximizes the correlation between the projection of input vector onto the unit vector, $\vec{z}=\vec{v}^T\mathbb{X}$, and that of the output vector, $\vec{r}=\vec{w}^T\mathbb{Y}$:
+
+$$
+\begin{aligned}
+\max_{\vec{v}, \vec{w}}E[\vec{z}\cdot\vec{r}]= \max_{\vec{v}, \vec{w}}E[\vec{v}^T\mathbb{X}\cdot\vec{w}^T\mathbb{Y}]\\
+=\max_{\vec{v}, \vec{w}}\vec{v}^TE[\mathbb{X}\mathbb{Y}^T]\vec{w}
+\end{aligned}
+$$
+where:  
+
+  * $E[\mathbb{X}\mathbb{Y}^T]= C_{XY}$ is the covariance of mean-centered variables x and y
+  * $|\vec{v}|=|\vec{w}|=1$
+  * $$\mathbb{X}=
+      \begin{pmatrix}
+      x_1 \\
+      x_2 \\
+      \vdots \\
+      x_m
+      \end{pmatrix}$$
+  * $$\mathbb{Y}=
+      \begin{pmatrix}
+      y_1 \\
+      y_2 \\
+      \vdots \\
+      y_l
+      \end{pmatrix}$$
+
+$\vec{z}=\vec{v}^T\mathbb{X}$ is called the **score** of input $\mathbb{X}$ with respect to $\vec{v}$, and $\vec{r}=\vec{w}^T\mathbb{Y}$ is called the score of output $\mathbb{Y}$ with respect to $\vec{w}$; they are the projection coordinates on $\vec{v}, \vec{w}$. 
+
+Covariance Matrix:
+$$
+\begin{equation}
+C_{XY}=E[\mathbb{XY^T}]=E[
+\begin{pmatrix}
+x_1 \\
+\cdots \\
+x_m
+\end{pmatrix}
+\begin{pmatrix}
+y_1 & \cdots  y_l
+\end{pmatrix}
+]=
+\begin{pmatrix}
+E[\vec{x_1}\vec{y_1}] & \cdots & E[\vec{x_1}\vec{y_l}] \\
+\vdots & \cdots & \vdots \\
+E[\vec{x_m}\vec{y_1}] & \cdots & E[\vec{x_m}\vec{y_l}] \\
+\end{pmatrix}
+\end{equation}
+$$
+
+### Problem
+$$
+\max_{\vec{v}, \vec{w}}\vec{v}^TC_{XY}\vec{w}
+$$
+Subject to $|\vec{v}|=1, |\vec{w}|=1$.
+
+### Solution
+Using two Lagrange multipliers, the necessary conditions for $\vec{v}$ and $\vec{w}$ to maximize the correlation are:
+$$
+\tag{3}
+\begin{equation}
+\frac{\partial }{\partial \vec{v}}=0 \Rightarrow C_{XY}\vec{w}-\lambda_{\vec{v}}\vec{v}=0
+\end{equation}
+$$
+$$
+\tag{4}
+\begin{equation}
+\frac{\partial }{\partial \vec{w}}=0 \Rightarrow C_{XY}^T\vec{v}-\lambda_{\vec{w}}\vec{w}=0
+\end{equation}
+$$
+By definition, $C_{XY}^T=C_{YX}$.  
+From (4), $\vec{w}=\frac{1}{\lambda_\vec{v}}C_{YX}\vec{v}$. Substituting this in (3) yields $C_{XY}C_{YX}\vec{v}=\lambda_\vec{v}\lambda_\vec{w}\vec{v}$.  
+From (3), $\vec{v}=\frac{1}{\lambda_\vec{w}}C_{YX}\vec{w}$. Substituting this in (4) yields $C_{YX}C_{XY}\vec{w}=\lambda_\vec{v}\lambda_\vec{w}\vec{w}$.
+This implies $\vec{v}, \vec{w}$ are eigenvectors for matrix $C_{XY}C_{YX}$ and $C_{YX}C_{XY}$.
+
+### SVD
+Theorem: the unit vectors, $\vec{v_0}$ and $\vec{w_0}$, that maximize the correlation between input and output scores, $\vec{z}=\vec{v}^T\mathbb{X}$ and $\vec{r}=\vec{w}^T\mathbb{Y}$, are the left and right singular vectors, respectively, associated with the largest singular value of the cross-correlation matrix $C_{XY}$
+
+
+Step 2: optimal prediction with one latent variable
+optimal prediction
+$$
+\vec{\hat{y}}=\vec{q^0}\vec{z}
+$$
+$$
+\vec{q^0}=arg \min_{q}E[|\vec{y}-\vec{\hat{y}}|^2]
+$$
+It is conceivable that this optimal coefficient/parameter vector $\vec{q^0}$ is in the same direction as unit vector $\vec{w}$.
+
+$$
+\vec{q^0}=\frac{C_{YX}\vec{v}}{\vec{v}^TC_{XX}\vec{v}}
+$$
+This is called **Output Loading Vector**.
+
+Step 3: deflation
+$$
+\vec{p^0}=\frac{C_{XX}\vec{v}}{\vec{v}^TC_{XX}\vec{v}}
+$$
+This is called **Input Loading Vector**.
+
+
+
+## Summary
+The most significant $m^*$ sets of latent variables are obtained recursively,
+$$
+\mathbb{C_{XX}}[1]=E[\vec{x}\vec{x}^T], \mathbb{C_{YX}}[1]=E[\vec{y}\vec{x}^T]
+$$
+
+For $k=1,\dots,m^{\star}$:
+$$
+\mathbb{C_{XX}}[k+1]=(\mathbb{I}-\vec{p}[k]\vec{v}^T[k])\mathbb{C_{XX}}[k];
+$$
+$$
+\mathbb{C_{YX}}[k+1]=\mathbb{C_{YX}}[k](\mathbb{I}-\vec{v}[k]\vec{p}^T[k]);
+$$
+$$
+\vec{p}[k]=\frac{\mathbb{C_{XX}}[k]\vec{v}[k]}{\vec{v}^T[k]\mathbb{C_{XX}}[k]\vec{v}[k]}, \vec{q}[k]=\frac{\mathbb{C_{YX}}[k]\vec{v}[k]}{\vec{v}^T[k]\mathbb{C_{XX}}[k]\vec{v}[k]}
+$$
+With these loading vectors, $\mathbb{x,y}$ can be approximated to:
+$$
+\mathbb{x}=\sum_{k=1}^{m\star}\vec{z}[k]\vec{p}[k]+\mathbb{x}[m\star]
+$$
+$$
+\mathbb{y}=\sum_{k=1}^{m\star}\vec{z}[k]\vec{q}[k]+\mathbb{y}[m\star]
+$$
+
+
+## Example
+```{r}
+data(yarn)
+data(oliveoil)
+data(gasoline)
+
+gasTrain <- gasoline[1:50,]
+gasTest <- gasoline[51:60,]
+
+gas1 <- plsr(octane ~ NIR, ncomp = 10, data = gasTrain, validation = "LOO")
+summary(gas1)
+```
+
+```{r}
+# plot
+plot(RMSEP(gas1), legendpos = "topright")
+
+#  Regression coefficients plot
+plot(gas1, 
+     plottype = "coef", 
+     ncomp=1:3, 
+     legendpos = "bottomleft",
+     labels = "numbers", 
+     xlab = "nm")
+
+#  Correlation loadings plot
+plot(gas1, plottype = "correlation")
+```
+- To assess how many components are optimal, a validation plot can be used: this shows a measure of prediction performance (either RMSEP, MSEP, or R2) against the number of components.
+
+- The regression coefficients can be visualised: this allows simultaneous plotting of the regression vectors for several different numbers of components at once. The coefficients for two components and three components are similar. This is because the third component contributes little to the predictions.
+
+- A ‘correlation loadings’ plot shows the correlations between each variable and the selected components. Each point corresponds to an X variable. The squared distance between the point and the origin equals the fraction of the variance of the variable explained by the components in the panel.
+
+
+
+
+
+
+
+## Reference

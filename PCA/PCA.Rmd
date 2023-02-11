@@ -1,0 +1,528 @@
+---
+title: "PCA"
+author: "LT"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: yes
+    theme: journal
+    code_folding: show
+---
+
+```{r}
+pacman::p_load(factoextra, FactoMineR, corrplot, tidyverse, gridExtra, DataExplorer, pls, caret, readr, tidymodels)
+```
+
+# PCA
+## Example: USArrest
+### EDA
+```{r}
+data("USArrests")
+head(USArrests, 10)
+```
+
+```{r}
+# compute variance of each variable
+apply(USArrests, 2, var)
+```
+```{r}
+# standarize variables
+scaled_df <- apply(USArrests, 2, scale)
+apply(scaled_df, 2, var)
+```
+### PCA
+```{r}
+# covariance matrix
+arrests.cov <- cov(scaled_df)
+
+# Calculate eigenvalues & eigenvectors
+arrests.eigen <- eigen(arrests.cov)
+str(arrests.eigen)
+```
+```{r}
+# Extract the loadings
+(phi <- arrests.eigen$vectors[,1:2])
+phi <- -phi # leads to more logical interpretation of graphical results
+row.names(phi) <- c("Murder", "Assault", "UrbanPop", "Rape")
+colnames(phi) <- c("PC1", "PC2")
+phi
+```
+Each principal component vector defines a direction in feature space. 
+
+By examining the principal component vectors above, we can infer the the first principal component (PC1) roughly corresponds to (serious crime) an overall rate of serious crimes since Murder, Assault, and Rape have the largest values. PC2 (Urbanization) is affected by UrbanPop more than the other three variables, so it roughly corresponds to the level of urbanization of the state, with some opposite, smaller influence by murder rate.
+
+
+If we project the n data points $x_1,...,x_n$ onto the first eigenvector, the projected values are called the principal component scores for each observation.
+
+**Important**  
+the algebraic definition of dot product is:
+$$
+\begin{equation}
+\tag{1}
+\vec{a} \cdot \vec{b}=a_1b_1+\cdots+a_nb_n=\sum_{i=1}^{n}a_ib_i 
+\end{equation}
+$$
+The *geometric* formulation is:
+$$
+\tag{2}
+\vec{a} \cdot \vec{b}=||\vec{a}||||\vec{b}||\cos\theta
+$$
+when projecting $\vec{a}$ onto $\vec{b}$ both of size $N \times 1$, we are trying to calculate $||\vec{a}||||\vec{b}||\cos\theta$. If $\vec{b}$ is a unit vector of norm 1, then we have:
+$$
+\tag{3}
+||\vec{a}||||\vec{b}||\cos\theta=||\vec{a}||\cos\theta
+$$
+In this case, the projection of $\vec{a}$ onto $\vec{b}$ is equal to the dot product of $\vec{a}$ and $\vec{b}$. This is one of the reasons why we center and standardize variables prior to PCA. 
+
+```{r}
+projection_1 <- as.matrix(scaled_df) %*% phi[,1] 
+projection_2 <- as.matrix(scaled_df) %*% phi[,2]
+
+# Create data frame with Principal Components scores
+individual <- data.frame(State = row.names(USArrests), projection_1, projection_2)
+```
+
+```{r}
+# Plot Principal Components for each State
+ggplot(individual, aes(projection_1, projection_2)) + 
+  modelr::geom_ref_line(h = 0) +
+  modelr::geom_ref_line(v = 0) +
+  geom_text(aes(label = State), size = 3) +
+  xlab("Serious crime") + 
+  ylab("Urbanization") 
+```
+
+### Proportion of Variance Explained
+PCA reduces the dimensionality while explaining most of the variability. The proportion is defined by:
+$$
+\tag{4}
+PVE=100*E_i/\sum_{i=1}^{n}E_i
+$$
+where:
+- $E_i$ denotes the eigenvalue of the $i$th eigenvector or component
+- $n=1,\cdots,N$, number of variables 
+
+```{r}
+PVE <- arrests.eigen$values / sum(arrests.eigen$values)
+
+# PVE (aka scree) plot
+qplot(c(1:4), PVE) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("PVE") +
+  ggtitle("Scree Plot") +
+  ylim(0, 1)
+```
+```{r}
+# built in function
+pca_result <- prcomp(USArrests, scale = TRUE)
+pca_result$rotation <- -pca_result$rotation
+
+# biplot to study variable loading and individual clustering
+biplot(pca_result, scale = 0)
+```
+
+
+
+## Visualization
+```{r}
+data(decathlon2)
+decathlon2.active <- decathlon2[1:23, 1:10]
+res.pca <- FactoMineR::PCA(decathlon2.active, graph = FALSE)
+print(res.pca)
+```
+
+### Visualization and Interpretation
+- `get_eigenvalue(res.pca)`: Extract the eigenvalues/variances of principal components
+- `fviz_eig(res.pca)`: Visualize the eigenvalues
+- `get_pca_ind(res.pca)`, get_pca_var(res.pca): Extract the results for individuals and variables, respectively.
+- `fviz_pca_ind(res.pca)`, fviz_pca_var(res.pca): Visualize the results individuals and variables, respectively.
+- `fviz_pca_biplot(res.pca)`: Make a biplot of individuals and variables.
+
+### Eigenvalues/Variances
+- eigenvalues measure the amount of variation retained by each principal component (linear weighted combination)
+```{r}
+eig.val <- get_eigenvalue(res.pca)
+eig.val
+```
+
+Eigenvalues can be used to determine the number of principal components to retain after PCA (Kaiser 1961):
+- An eigenvalue > 1 (cutoff) indicates that PCs account for more variance than accounted by one of the original variables in standardized data.
+- You can also limit the number of component to that number that accounts for a certain fraction of the total variance.
+```{r}
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+```
+
+### Variables
+```{r}
+var <- get_pca_var(res.pca)
+var
+```
+The components of the get_pca_var() can be used in the plot of variables as follow:
+
+- `var$coord`: coordinates of variables to create a scatter plot
+- `var$cos2`: represents the quality of representation for variables on the factor map. It’s calculated as the squared coordinates: var.cos2 = var.coord * var.coord.
+- `var$contrib`: contains the contributions (in percentage) of the variables to the principal components. The contribution of a variable (var) to a given principal component is (in percentage)
+:(var.cos2 * 100) / (total cos2 of the component).
+
+```{r}
+var$contrib
+```
+
+#### Correlation circle
+The correlation(weights) between a variable and a principal component (PC) is used as the coordinates of the variable on the PC.
+```{r}
+# Coordinates of variables
+var$coord
+```
+
+```{r}
+# plot variables
+fviz_pca_var(res.pca, col.var = "black")
+```
+
+The plot above is also known as variable correlation plots. It shows the relationships between all variables.
+- Positively correlated variables are grouped together
+- Negatively correlated variables are positioned on opposite sides of the plot origin 
+- The distance between variables and the origin measures the quality of the variables on the factor
+map. Variables that are away from the origin are well represented on the factor map.
+
+
+#### Contributions of variables to PCs
+The contributions of variables in accounting for the variability in a given principal component are expressed in percentage.
+- Variables that are correlated with PC1 (i.e., Dim.1) and PC2 (i.e., Dim.2) are the most important in explaining the variability in the data set
+- Variables that do not correlated with any PC or correlated with the last dimensions are variables with low contribution and might be **removed** to simplify the overall analysis.
+```{r}
+var$contrib
+```
+
+variable's contribution to one/more component: 
+- the expected average contribution ff the contribution of the variables were uniform, the expected value would be 1/length(variables) = 1/10 = 10% (cutoff).
+- the total contribution of a given variable, on explaining the variations retained by two principal components, say PC1 and PC2, is calculated as contrib = [(C1 * Eig1) + (C2 * Eig2)]/(Eig1 + Eig2), where
+  - C1 and C2 are the contributions of the variable on PC1 and PC2, respectively
+  - Eig1 and Eig2 are the eigenvalues of PC1 and PC2, respectively [eigenvalues measure the amount of variation retained by each PC].
+  - the expected contribution of a variable for PC1 and PC2 is : [(10* Eig1) + (10 * Eig2)]/(Eig1 + Eig2)
+```{r}
+# Contributions of variables to PC1
+fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
+# Contributions of variables to PC1-2
+fviz_contrib(res.pca, choice = "var", axes = 1:2, top = 10)
+```
+#### Dimension description
+```{r}
+res.desc <- dimdesc(res.pca, axes = c(1,2), proba = 0.05)
+# Description of dimension 1
+res.desc$Dim.1
+# Description of dimension 2
+res.desc$Dim.2
+```
+
+
+### Individuals
+```{r}
+ind <- get_pca_ind(res.pca)
+ind
+```
+plots
+```{r}
+# point color
+fviz_pca_ind(res.pca, col.ind = "cos2", 
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+
+# point size
+fviz_pca_ind(res.pca, pointsize = "contrib", 
+             pointshape = 21, fill = "#E7B800",
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+```
+
+```{r}
+# Individual's total contribution on PC1 and PC2
+fviz_contrib(res.pca, choice = "ind", axes = 1:2)
+```
+
+#### color by group
+```{r}
+iris.pca <- PCA(iris[,-5], graph = FALSE)
+
+fviz_pca_ind(iris.pca,
+             geom.ind = "point", # show points only (nbut not "text")
+             col.ind = iris$Species, # color by groups
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE, # Concentration ellipses
+             legend.title = "Groups"
+             )
+```
+
+```{r}
+# Add confidence ellipses
+fviz_pca_ind(iris.pca, geom.ind = "point", col.ind = iris$Species, 
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE, ellipse.type = "confidence",
+             legend.title = "Groups"
+             )
+```
+
+
+### biplot
+```{r}
+fviz_pca_biplot(res.pca, repel = TRUE,
+                col.var = "#2E9FDF", # Variables color
+                col.ind = "#696969"  # Individuals color
+                )
+```
+
+
+```{r}
+fviz_pca_biplot(iris.pca, 
+                col.ind = iris$Species, palette = "jco", 
+                addEllipses = TRUE, label = "var",
+                col.var = "black", repel = TRUE,
+                legend.title = "Species") 
+```
+
+
+```{r}
+fviz_pca_biplot(iris.pca, 
+                # Fill individuals by groups
+                geom.ind = "point",
+                pointshape = 21,
+                pointsize = 2.5,
+                fill.ind = iris$Species,
+                col.ind = "black",
+                # Color variable by groups
+                col.var = factor(c("sepal", "sepal", "petal", "petal")),
+                
+                legend.title = list(fill = "Species", color = "Clusters"),
+                repel = TRUE        # Avoid label overplotting
+             )+
+  ggpubr::fill_palette("jco")+      # Indiviual fill color
+  ggpubr::color_palette("npg")      # Variable colors
+```
+
+```{r}
+fviz_pca_biplot(iris.pca, 
+                # Individuals
+                geom.ind = "point",
+                fill.ind = iris$Species, col.ind = "black",
+                pointshape = 21, pointsize = 2,
+                palette = "jco",
+                addEllipses = TRUE,
+                # Variables
+                alpha.var ="contrib", col.var = "contrib",
+                gradient.cols = "RdYlBu",
+                
+                legend.title = list(fill = "Species", color = "Contrib",
+                                    alpha = "Contrib")
+                )
+```
+
+
+
+
+
+
+# PCR
+## Background
+Principal components regression (PCR) was first suggested by Kendall (1957). PCR is a regression technique based on principal component analysis (PCA).
+
+The basic idea of PCR is to use the principal components of $\mathbb{X}$ as regressors and then regress on $\mathbb{Y}$ following the typical least squares procedure.
+
+PCA in linear regression has been used to serve two basic goals. 
+- reduce dimensionality when the number of predictors is too high, along with partial least square regression
+- avoid linear dependence
+
+
+## Mathematics
+- center variables for PCA
+- eigendecompose $mathbb{X}$ to get a set of linear independent eigenvectors (principal components) $\mathbb{V}$
+$$
+D=diag[\delta_1,\delta_2,\cdots,\delta_p]=
+\begin{pmatrix}
+\delta_1 & 0 & \cdots & 0 \\
+0 & \delta_2 & \cdots & 0 \\
+\vdots & \vdots & \vdots & \vdots \\
+0 & 0 & \cdots & \delta_p
+\end{pmatrix}
+$$
+- perform regression using eigenvector matrix $\mathbb{Z}$ (reduced columns from $\mathbb{V}$)
+$$
+\vec{\beta_Z}=(\mathbb{Z}^T\mathbb{Z})^{-1}\mathbb{Z}^T\vec{y}
+$$
+from it we derive:
+$$
+\hat{y}=\mathbb{Z}\vec{\beta_Z}=(\mathbb{X}\mathbb{V})\vec{\beta_Z}=\mathbb{X}(\mathbb{V}\vec{\beta_Z})=\mathbb{X}\vec{\beta_X}
+$$
+we also get:
+$$
+\vec{\beta_X}=\mathbb{V}\vec{\beta_Z}
+$$
+
+## Example
+```{r}
+# perform PCA
+iris.pca <- prcomp(iris[,2:4],scale=TRUE)
+Z = iris.pca$x[,1:2] # select the first two PCs
+
+# PCR with first two components
+iris.lm <- lm(iris$Sepal.Length~Z)
+iris.lm %>% summary()
+```
+To convert from PCR coefficients to coefficients of  $\mathbb{X}$, we can multiply by  $\mathbb{V}$:
+```{r}
+iris.pca$rotation[,1:2] %*% coef(iris.lm)[-1]
+```
+
+In practice, use `pls` package:
+```{r}
+iris.pcr <- pcr(Sepal.Length~ Sepal.Width+Petal.Length+Petal.Width, 2, # number of components,
+                scale=TRUE, data=iris)
+coef(iris.pcr)
+
+# choose the number of components to retain
+iris.pcr2 <- pcr(Sepal.Length~ Sepal.Width+Petal.Length+Petal.Width, 3, 
+                scale=TRUE, data=iris, validation='CV')
+summary(iris.pcr2)
+```
+
+## More Example
+```{r}
+movies <- readr::read_csv("https://www.warin.ca/datalake/courses_data/qmibr/session9/movies_metadata.csv")
+
+df <- movies %>%
+  # select features
+  select(budget, popularity, revenue, runtime, vote_average, vote_count)
+
+# remove na
+df <- na.omit(df)
+head(df)
+```
+Creating a train and test dataset:
+```{r}
+# Fix the random numbers by setting the seed 
+# This enables the analysis to be reproducible when random numbers are used 
+set.seed(222)
+# Put 3/4 of the data into the training set 
+data_split <- initial_split(df, prop = 3/4)
+
+# Create data frames for the two sets:
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+```
+
+
+Variable correlation
+```{r}
+res <- cor(train_data, method="pearson")
+corrplot::corrplot(res, method= "color", order = "hclust", tl.pos = 'n')
+```
+
+Data standardization
+```{r}
+# standardization step
+train_data.standard <- preProcess(train_data, method = c("center", "scale"))
+# normalization step
+train_data.norm <- predict(train_data.standard, train_data)
+```
+
+
+PCA
+```{r}
+res.pca <- FactoMineR::PCA(train_data.norm,  graph = FALSE)
+
+factoextra::get_eig(res.pca) 
+
+# Visualize eigenvalues/variances
+factoextra::fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 50))
+
+# Control variable colors using their contributions
+fviz_pca_var(res.pca, axes = c(1, 2), col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             )
+# dim 3-4
+fviz_pca_var(res.pca, axes = c(3, 4), col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             )
+```
+
+
+```{r}
+fviz_pca_biplot(res.pca, axes = c(1, 2), col.ind = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+```
+
+
+
+PCR
+```{r}
+train_data.norm.y <- train_data.norm$popularity
+train_data.norm$popularity <- NULL
+
+# redo PCA
+res.pca <- PCA(train_data.norm,  graph = FALSE)
+# Extract the results for individuals
+ind <- get_pca_ind(res.pca)
+
+# Coordinates of individuals
+head(ind$coord)
+```
+
+```{r}
+plot(pcs$Dim.1, train_data.norm.y)
+plot(pcs$Dim.2, train_data.norm.y)
+plot(pcs$Dim.3, train_data.norm.y)
+```
+
+```{r}
+ols.data <- cbind(train_data.norm.y, pcs)
+
+# fit lm model
+model1 <- lm(train_data.norm.y ~ ., data = ols.data)
+summary(model1)
+```
+To get real $\beta$ coefficients
+```{r}
+beta.Z <- as.matrix(model1$coefficients[2:6]) # [2:6] to capture the 5 dimensions
+res.pca2 <- prcomp(train_data.norm)
+V <- as.matrix(res.pca2$rotation)
+beta.X <- V %*% beta.Z
+beta.X
+```
+
+Prediction
+```{r}
+# standardization step
+test_data.standard <- preProcess(test_data, method = c("center", "scale"))
+# normalization step
+test_data.norm <- predict(test_data.standard, train_data)
+
+# PCA on test set
+res.pca.test <- PCA(test_data.norm, graph = FALSE)
+ind.test <- get_pca_ind(res.pca.test)
+pcs.test <- as.data.frame(ind.test$coord)
+```
+
+```{r}
+pred.test <- predict(model1, newdata = pcs.test)
+head(pred.test)
+```
+
+
+
+
+
+
+
+
+
+
+
+
