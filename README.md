@@ -1,2 +1,2 @@
 # statistical-learning
-This repo is dedicated for statistical learning techniques.
+This repo is dedicated to statistical learning techniques.
