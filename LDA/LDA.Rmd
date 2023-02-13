@@ -2,13 +2,265 @@
 title: "LDA"
 author: "Tuo Liu"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    theme: journal
+    code_folding: show
+bibliography: reference.bib  
+nocite: '@*'
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, caret, MASS)
+theme_set(theme_classic())
 ```
 
-## Discriminant Analysis
+## Linear Discriminant Analysis (LDA)
+Discriminant Analysis (DA) predicts the probability of belonging to a given class based on a set of original variables.
+
+- LDA: Uses linear combinations of predictors to predict the class of a given observation. Assumes that the predictor variables (p) are normally distributed and the classes have identical variances (for univariate analysis, p=1) or identical covariance matrices (for multivariate analysis, p > 1).
+- QDA: quadratic discriminant analysis is more flexible than LDA...
+- the list goes on...
+
+Let's focus on the application of linear algebra on statistics here.
+
+## Mathematics & Objective function
+The goal of LDA is to find a direction (basis vectors) in the data space that maximally separates categories of data. The objective function is defined as:
+$$
+\tag{1}
+\begin{equation}
+\lambda=\frac{||\mathbb{X_B}\vec{w}||^2}{||\mathbb{X_W}\vec{w}||^2}
+\end{equation}
+$$
+In other words: we want to find a set of feature weights $\vec{w}$ that maximize the ratio of the variance of data feature $\mathbb{X_B}$, to the variance of data feature $\mathbb{X_W}$.
+
+Given $||\mathbb{X_B}\vec{w}||^2=\mathbb{w^TX_B^T}\mathbb{X_B}\mathbb{w}, \mathbb{X_B^T}\mathbb{X_B}=\mathbb{C_B}$, to express equation (1) algebraically and generally
+$$
+\begin{equation}
+\tag{2}
+\Lambda=\frac{\mathbb{W^TX_B^T}\mathbb{X_B}\mathbb{W}}{\mathbb{W^TX_W^T}\mathbb{X_W}\mathbb{W}} \Rightarrow
+\Lambda=\mathbb{W^{-1}C_W^{-1}C_BW}
+\Rightarrow
+\mathbb{C_BW}=\Lambda\mathbb{C_WW}
+\end{equation}
+$$
+To express equation (2) algebraically, the solution to LDA comes from a generalized eigendecomposition, i.e., simultaneous diagonalization of two matrices, on two covariance matrices. The eigenvectors are the weights, and the generalized eigenvalues are the variance ratio of each component.
+
+## Cons
+Although LDA is widely used as a data reduction technique, it suffers from a number of problems.
+
+- LDA fails to find the lower dimensional space if the dimensions are much higher than the number of samples in the data matrix  
+  * Solution: LDA-SSS, PCA-LDA, RLDA
+- If different classes are not separable linearly, LDA cannot discriminate between these classes [@article]
+
+
+## Tutorial
+To project the original data matrix onto a lower dimensional space, three steps needed to be performed:  
+
+- calculate the separability between different classes (i.e. the distance between the means
+of different classes `between-class variance`)
+- calculate the distance between the mean and the samples of each class (`within-class variance`)
+-  construct the lower dimensional space which maximizes the between-class variance and minimizes the within-class variance
+
+### Between & Within class variance
+- Class means
+$$
+\mu_j=\frac{1}{n_j}\sum_{x_i \in w_j}{x_i}
+$$
+```{r}
+# exmaple data classes
+w1 <- matrix(c(1.00, 2.00, 3.00, 4.00, 5.00, 2.00, 3.00, 3.00, 5.00, 5.00), ncol = 2)
+w2 <- matrix(c(4.00, 5.00, 5.00, 3.00, 5.00, 6.00, 2.00, 0.00, 2.00, 2.00, 3.00, 3.00), ncol = 2)
+w1
+w2
+```
+
+- Total mean
+$$
+\mu=\frac{1}{N}\sum_{i=1}^{N}{x_i}=\sum_{i=1}^{c}\frac{n_i}{N}\mu_i
+$$
+```{r}
+# calculate class means and total mean
+u1 <- colMeans(w1) %>% t()
+u2 <- colMeans(w2) %>% t()
+u <- u1*nrow(w1)/(nrow(w1)+nrow(w2))+u2*nrow(w2)/(nrow(w1)+nrow(w2)) 
+u1 
+u2
+u
+```
+- Between-class variance of each class $S_{B_i}$ & total between-class variance $S_B$
+```{r}
+sb1 <- 5*t(u1-u) %*% (u1-u)
+sb1
+```
+
+$$
+S_{B_1}=n_1(\mu_1-\mu)^T(\mu_1-\mu)=5\begin{pmatrix}-0.91 & 0.87\end{pmatrix}^T\begin{pmatrix}-0.91 & 0.87\end{pmatrix}=\begin{pmatrix}4.13 & -3.97\\ -3.97 & 3.81\end{pmatrix}
+$$
+```{r}
+sb2 <- 6*t(u2-u) %*% (u2-u)
+sb2
+```
+```{r}
+sb <- sb1 + sb2
+sb # between-class covariance matrix
+```
+- Within-class variance
+```{r}
+# mean-center
+d1 <- sweep(w1, 2, u1)
+d2 <- sweep(w2, 2, u2)
+d1
+d2
+```
+
+#### Class-Independent Method
+within-class variance for each class ($S_{Wi}$) is calculated as follows
+$$
+\mathbb{S_{W_j}}=\mathbb{d_j}^T\mathbb{d_j}=\sum_{i=1}^{n_j}\mathbb{(x_{ij-\mu_j})}^T\mathbb{(x_{ij-\mu_j})}
+$$
+The total within-class matrix ($S_W$) is then calculated as follows
+$$
+\mathbb{S_W}=\sum_{i=1}^{c}\mathbb{S_{w_i}}
+$$
+```{r}
+sw1 <- t(d1) %*% d1
+sw2 <- t(d2) %*% d2
+sw <- sw1 + sw2
+sw1
+sw2
+sw # within-class covariance matrix
+```
+
+
+### Generalized Eigendecomposition
+Do generalized eigendecomposition with the between-, and within-class covariance matrix
+```{r}
+s <- eigen(solve(sw) %*% sb)
+s$values
+s$vectors
+```
+### Projection on new space
+```{r}
+# class 1 projection coordinate on v1
+y11 <- w1 %*% s$vectors[,1]
+y11
+
+# class 2 projection coordinate on v1
+y21 <- w2 %*% s$vectors[,1]
+y21
+
+# class 1 projection coordinate on v2
+y12 <- w1 %*% s$vectors[,2]
+y12
+
+# class 2 projection coordinate on v2
+y22 <- w2 %*% s$vectors[,2]
+y22
+```
+#### plot
+```{r}
+class <- c(rep("1", 5), rep("2",6))
+df <- rbind(w1,w2) |> as.data.frame() |> cbind(class) |> rename(ft1=V1, ft2=V2)
+
+y1 <- rbind(y11, y21)
+y2 <- rbind(y12, y22)
+df_p <- cbind(y1,y2) |> as.data.frame() |> cbind(class) |> rename(ft1=V1, ft2=V2)
+
+
+# plot
+par(mfrow=c(1,2))
+plot(df$ft1,df$ft2, type="p", pch=19, xlab = "Axis 1", ylab = "Axis 2")
+plot(df_p$ft1,df_p$ft2, type="p", pch=19, xlab = "LDAxis 1", ylab = "LDAxis 2")
+```
+
+
+## Implementation in R
+```{r}
+# Load the data
+data("iris")
+
+# Split the data into training (80%) and test set (20%)
+set.seed(123)
+training.samples <- iris$Species %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data <- iris[training.samples, ]
+test.data <- iris[-training.samples, ]
+
+# Estimate preprocessing parameters
+preproc.param <- train.data %>% 
+  preProcess(method = c("center", "scale"))
+
+# Transform the data using the estimated parameters
+train.transformed <- preproc.param %>% predict(train.data)
+test.transformed <- preproc.param %>% predict(test.data)
+
+# fit LDA
+model <- lda(Species~., data = train.transformed)
+model
+```
+The lda() outputs contain the following elements:
+
+- Prior probabilities of groups: the proportion of training observations in each group. For example, there are 33% of the training observations in the setosa group
+- Group means: group center of gravity. Shows the mean of each variable in each group.
+- Coefficients of linear discriminants: Shows weights of the linear combination of predictor variables that are used to form the LDA spaces.
+
+
+
+inspect model results
+
+The predict() function returns the following elements:
+
+- class: predicted classes of observations.
+- posterior: is a matrix whose columns are the groups, rows are the individuals and values are the posterior probability that the corresponding observation belongs to the groups.
+- x: contains the linear discriminants (latent spaces coordinates)
+
+```{r}
+# Make predictions
+predictions <- model %>% predict(test.transformed)
+names(predictions)
+
+# Model accuracy
+mean(predictions$class==test.transformed$Species)
+
+# Predicted classes
+head(predictions$class, 6)
+# Predicted probabilities of class memebership.
+head(predictions$posterior, 6) 
+# Linear discriminants
+head(predictions$x, 3)
+```
+
+plot
+```{r}
+lda.data <- cbind(train.transformed, predict(model)$x)
+
+# plot
+ggplot(lda.data, aes(LD1, LD2)) +
+  geom_point(aes(color = Species))
+```
+
+
+## Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
