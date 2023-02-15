@@ -1,0 +1,275 @@
+---
+title: "multivariate analysis basics"
+author: "Tuo Liu"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+      toc: true
+      theme: paper
+      code_folding: show
+  bibliography: reference.bib  
+  nocite: '@*'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(car, RColorBrewer)
+```
+
+
+# Matrix operations
+- sum of matrices (same size)
+$$
+\mathbb{A+B}=(a_{ij}+b_{ij})
+$$
+- multiplication of matrix by scalar
+$$
+s\mathbb{A}=(s \times a_{ij})
+$$
+- Inner Product and Vector Norm
+$$
+\begin{equation}
+\tag{1}
+\vec{a^T}\vec{b}=\vec{b^T}\vec{a}=\begin{pmatrix} a_1 & \dots a_m\end{pmatrix}\begin{pmatrix} b_1 \\ \dots \\ b_m\end{pmatrix}=a_1b_1+ \dots + a_mb_m=\sum_{i=1}^{m}a_ib_i
+\end{equation}
+$$
+$$
+\begin{equation}
+\tag{2}
+||\vec{a}||^2=\vec{a^T}\vec{a}=\sum_{i=1}^{m}a_i^2
+\end{equation}
+$$
+$||\vec{a}||$ is called norm of $\vec{a}$.
+
+
+- Trace Operator and Matrix Norm
+A matrix with the number of rows equivalent to that of columns is said to be square. For a square matrix, the elements on the diagonal are called the diagonal elements of that matrix. Their sum is called a `trace`. 
+$$
+\begin{equation}
+\tag{2}
+tr(\mathbb{AB})=tr(\mathbb{BA})
+\end{equation}
+$$
+$$
+||\mathbb{A}||^2=tr(\mathbb{AA^T})=tr(\mathbb{A^TA})=\sum_{i=1}^{n}\sum_{j=1}^{m}a_{ij}^2
+$$
+This is called the squared norm of $\mathbb{A}$
+
+- Special Square Matrices
+  - A square matrix $\mathbb{S} = (s_{ij})$ satisfying $\mathbb{S}=\mathbb{S^T}$ is said to be `symmetric`. 
+  - A square matrix $\mathbb{D}$ whose off-diagonal elements are all zeros is called a diagonal matrix
+  
+$$
+\mathbb{D}^t=\mathbb{DD \dots D}
+$$
+  - `Identity matrix` refers to the diagonal matrix whose diagonal elements are all ones
+
+
+
+# Intra-variable Statistics
+- Data matrix
+$$
+\mathbb{X}=\begin{pmatrix} x_1 \dots x_j \dots x_p\end{pmatrix}
+$$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Read-in data
+```{r}
+wine <- read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data",
+                   sep=",")
+```
+
+## Plot
+```{r}
+scatterplotMatrix(wine[2:6])
+```
+
+### profile plot
+Another type of plot that is useful is a “profile plot”, which shows the variation in each of the variables, , by plotting the value of each of the variables for each of the samples.
+```{r}
+makeProfilePlot <- function(mylist,names)
+  {
+     require(RColorBrewer)
+     # find out how many variables we want to include
+     numvariables <- length(mylist)
+     # choose 'numvariables' random colours
+     colours <- brewer.pal(numvariables,"Set1")
+     # find out the minimum and maximum values of the variables:
+     mymin <- 1e+20
+     mymax <- 1e-20
+     for (i in 1:numvariables)
+     {
+        vectori <- mylist[[i]]
+        mini <- min(vectori)
+        maxi <- max(vectori)
+        if (mini < mymin) { mymin <- mini }
+        if (maxi > mymax) { mymax <- maxi }
+     }
+     # plot the variables
+     for (i in 1:numvariables)
+     {
+        vectori <- mylist[[i]]
+        namei <- names[i]
+        colouri <- colours[i]
+        if (i == 1) { plot(vectori,col=colouri,type="l",ylim=c(mymin,mymax)) }
+        else         { points(vectori, col=colouri,type="l")                                     }
+        lastxval <- length(vectori)
+        lastyval <- vectori[length(vectori)]
+        text((lastxval-10),(lastyval),namei,col="black",cex=0.6)
+     }
+}
+
+names <- c("V2","V3","V4","V5","V6")
+mylist <- list(wine$V2,wine$V3,wine$V4,wine$V5,wine$V6)
+makeProfilePlot(mylist,names)
+```
+## Summary Statistics
+### Sample Means-SD per group
+```{r}
+sapply(wine[2:14],mean)
+sapply(wine[2:14],sd)
+```
+
+### Means-Variances Per Group
+```{r}
+printMeanAndSdByGroup <- function(variables,groupvariable)
+  {
+     # find the names of the variables
+     variablenames <- c(names(groupvariable),names(as.data.frame(variables)))
+     # within each group, find the mean of each variable
+     groupvariable <- groupvariable[,1] # ensures groupvariable is not a list
+     means <- aggregate(as.matrix(variables) ~ groupvariable, FUN = mean)
+     names(means) <- variablenames
+     print(paste("Means:"))
+     print(means)
+     # within each group, find the standard deviation of each variable:
+     sds <- aggregate(as.matrix(variables) ~ groupvariable, FUN = sd)
+     names(sds) <- variablenames
+     print(paste("Standard deviations:"))
+     print(sds)
+     # within each group, find the number of samples:
+     samplesizes <- aggregate(as.matrix(variables) ~ groupvariable, FUN = length)
+     names(samplesizes) <- variablenames
+     print(paste("Sample sizes:"))
+     print(samplesizes)
+}
+
+printMeanAndSdByGroup(wine[2:14],wine[1])
+```
+
+### Between-groups and Within-groups Variance for One Variable
+```{r}
+calcWithinGroupsVariance <- function(variable,groupvariable)
+  {
+     # find out how many values the group variable can take
+     groupvariable2 <- as.factor(groupvariable[[1]])
+     levels <- levels(groupvariable2)
+     numlevels <- length(levels)
+     # get the mean and standard deviation for each group:
+     numtotal <- 0
+     denomtotal <- 0
+     for (i in 1:numlevels)
+     {
+        leveli <- levels[i]
+        levelidata <- variable[groupvariable==leveli,]
+        levelilength <- length(levelidata)
+        # get the standard deviation for group i:
+        sdi <- sd(levelidata)
+        numi <- (levelilength - 1)*(sdi * sdi)
+        denomi <- levelilength
+        numtotal <- numtotal + numi
+        denomtotal <- denomtotal + denomi
+     }
+     # calculate the within-groups variance
+     Vw <- numtotal / (denomtotal - numlevels)
+     return(Vw)
+}
+
+calcWithinGroupsVariance(wine[2],wine[1])
+```
+
+```{r}
+calcBetweenGroupsVariance <- function(variable,groupvariable)
+  {
+     # find out how many values the group variable can take
+     groupvariable2 <- as.factor(groupvariable[[1]])
+     levels <- levels(groupvariable2)
+     numlevels <- length(levels)
+     # calculate the overall grand mean:
+     grandmean <- mean(variable)
+     # get the mean and standard deviation for each group:
+     numtotal <- 0
+     denomtotal <- 0
+     for (i in 1:numlevels)
+     {
+        leveli <- levels[i]
+        levelidata <- variable[groupvariable==leveli,]
+        levelilength <- length(levelidata)
+        # get the mean and standard deviation for group i:
+        meani <- mean(levelidata)
+        sdi <- sd(levelidata)
+        numi <- levelilength * ((meani - grandmean)^2)
+        denomi <- levelilength
+        numtotal <- numtotal + numi
+        denomtotal <- denomtotal + denomi
+     }
+     # calculate the between-groups variance
+     Vb <- numtotal / (numlevels - 1)
+     Vb <- Vb[[1]]
+     return(Vb)
+}
+
+calcBetweenGroupsVariance(wine[2],wine[1])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
