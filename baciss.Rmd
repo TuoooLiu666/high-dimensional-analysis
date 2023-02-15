@@ -1,5 +1,5 @@
 ---
-title: "multivariate analysis basics"
+title: "Multivariate Analysis Basics"
 author: "Tuo Liu"
 date: "`r Sys.Date()`"
 output: 
@@ -17,16 +17,16 @@ pacman::p_load(car, RColorBrewer)
 ```
 
 
-# Matrix operations
-- sum of matrices (same size)
+# Matrix operations {.tabset}
+## sum of matrices (same size)
 $$
 \mathbb{A+B}=(a_{ij}+b_{ij})
 $$
-- multiplication of matrix by scalar
+## multiplication of matrix by scalar
 $$
 s\mathbb{A}=(s \times a_{ij})
 $$
-- Inner Product and Vector Norm
+## Inner Product and Vector Norm
 $$
 \begin{equation}
 \tag{1}
@@ -42,7 +42,7 @@ $$
 $||\vec{a}||$ is called norm of $\vec{a}$.
 
 
-- Trace Operator and Matrix Norm
+## Trace Operator and Matrix Norm
 A matrix with the number of rows equivalent to that of columns is said to be square. For a square matrix, the elements on the diagonal are called the diagonal elements of that matrix. Their sum is called a `trace`. 
 $$
 \begin{equation}
@@ -66,11 +66,124 @@ $$
 
 
 
-# Intra-variable Statistics
-- Data matrix
+# Intra-variable Statistics {.tabset}
+## Data matrix
 $$
 \mathbb{X}=\begin{pmatrix} x_1 \dots x_j \dots x_p\end{pmatrix}
 $$
+- Distributions
+## Averages
+  
+  $$
+  \bar{\vec{x_j}}=\frac{1}{n}\vec{1^T}\vec{x_j}
+  $$
+## Centered Scores
+$$
+\vec{y_j}=\vec{x_j}-\begin{pmatrix} \bar{x_j} \\\vdots \\\bar{x_j} \\\vdots \\\bar{x_j}\end{pmatrix}=(\mathbb{I_n}-\frac{1}{n}\vec{1}_n\vec{1}_n^T)\vec{x_j}=\mathbb{J}\vec{x_j}
+$$
+mind the centering matrix $\mathbb{J}$, it has special properties $\mathbb{J^2}=\mathbb{JJ}=\mathbb{J}, \mathbb{J}=\mathbb{J}^T$.
+
+## Variances-Standard Deviations
+$$
+var(\vec{x_j})=\frac{1}{n}\sum_{i=1}^{n}(x_{ij}-\bar{x_j})^2
+$$
+**Important**: rewrite it in algebra terms,
+$$
+var(\vec{x_j})=\frac{1}{n}(\mathbb{J}\vec{x_j})^T(\mathbb{J}\vec{x_j})=\frac{1}{n}\vec{x_j}^T\mathbb{J}\vec{x_j}
+$$
+$$
+\begin{equation}
+\tag{3}
+var(\vec{x_j})=\frac{1}{n}\vec{x_j}^T\mathbb{J}\vec{x_j}=\frac{1}{n}\vec{x_j}^T\mathbb{J}^T\mathbb{J}\vec{x_j}=\frac{1}{n}\vec{y_j}^T\vec{y_j}=\frac{1}{n}||\vec{y_j}||^2
+\end{equation}
+$$
+The `variance` of raw scores is expressed using their `centered score vector` simply as $n^{−1}||\vec{y_j}||^2$. The variance of the centered scores equals that for their raw
+scores.
+
+The square root of variance is called standard deviation, which is the length of vector
+$\vec{y_j} = \mathbb{J}\vec{x_j}$ divided by $n^{1/2}$.
+
+
+## Standardization
+Let the standard score vector for variable $j$ be denoted by $\vec{z_j}=[z1j, \dots, z_{nj}]^T$,
+$$
+\vec{z_j}=\frac{1}{\sqrt{var(\vec{x_j})}}\mathbb{J}\vec{x_j}=\frac{1}{\sqrt{var(\vec{x_j})}}\vec{y_j}
+$$
+where $\vec{y_j}$ is the centered $\vec{x_j}$.
+
+$$
+\frac{1}{n}||\vec{z_j}||^2=\frac{1}{n*var(\vec{x_j})}||\vec{y_j}||^2=1
+$$
+This also implies that the length of every standard score vector is always $||\vec{z_j}|| = n^{1/2}$.
+
+## matrix Representation
+A property of matrix product: if $\mathbb{A}$ is a matrix of n by m and $\vec{b_1}, …, \vec{b_k}$ are m by 1 vectors, then
+
+$$
+\begin{pmatrix}
+\tag{4}
+\mathbb{A}\vec{b_1} & \dots & \mathbb{A}\vec{b_k}
+\end{pmatrix}=
+\mathbb{A}
+\begin{pmatrix}
+\vec{b_1} & \dots & \vec{b_k}
+\end{pmatrix}
+$$
+
+from (4), Let $\mathbb{Y} = [\vec{y_1} \cdots \vec{y_p}]$ denote the n by p matrix of centered scores whose jth column is the corresponding column of X.
+$$
+\tag{5}
+\mathbb{Y}=
+\begin{pmatrix}
+\mathbb{J}\vec{x_1} & \dots & \mathbb{J}\vec{x_p}
+\end{pmatrix}=
+\mathbb{J}
+\begin{pmatrix}
+\vec{x_1} & \dots & \vec{x_p}
+\end{pmatrix}=
+\mathbb{JX}
+$$
+
+$$
+\mathbb{Z}=
+\begin{pmatrix}
+\frac{1}{\sqrt{var(\vec{x_1})}}\vec{y_1} & \dots & \frac{1}{\sqrt{var(\vec{x_p})}}\vec{y_p}
+\end{pmatrix}=
+\begin{pmatrix}
+\vec{y_1} & \dots & \vec{y_p}
+\end{pmatrix}
+\begin{bmatrix}
+    \frac{1}{\sqrt{var(\vec{x_1})}} & & \\
+    & \ddots & \\
+    & & \frac{1}{\sqrt{var(\vec{x_p})}}
+\end{bmatrix}=
+\mathbb{YD^{-1}}
+$$
+where
+$$
+\mathbb{D}=
+\begin{bmatrix}
+    \sqrt{var(\vec{x_1})} & & \\
+    & \ddots & \\
+    & & \sqrt{var(\vec{x_p})}
+\end{bmatrix}
+$$
+
+is the p by p diagonal matrix whose diagonal elements are the standard deviations for p variables.
+
+
+The standard score matrix $\mathbb{Z}$ can also be expressed as
+$$
+\tag{6}
+\mathbb{Z=JXD^{-1}}
+$$
+
+# Inter-variable Statistics {.tabset}
+## Covariance
+The correlation between two variables j and k can be indicated by a `**covariance**`, which is defined as
+$$
+v_{jk}=\frac{1}{n}\sum_{i=1}^{n}(x_{ij}-\bar{x_j})(x_{ik}-\bar{x_k})
+$$
 
 
 
@@ -88,7 +201,31 @@ $$
 
 
 
-## Read-in data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Example {.tabset}
 ```{r}
 wine <- read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data",
                    sep=",")
@@ -138,6 +275,7 @@ names <- c("V2","V3","V4","V5","V6")
 mylist <- list(wine$V2,wine$V3,wine$V4,wine$V5,wine$V6)
 makeProfilePlot(mylist,names)
 ```
+
 ## Summary Statistics
 ### Sample Means-SD per group
 ```{r}
