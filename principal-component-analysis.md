@@ -29,6 +29,7 @@ $$
 \mathbb{X}=\mathbb{K \Lambda L^T}
 $$
 Here, $\mathbb{K, L}$ satisfy $\mathbb{K^TK}=\mathbb{L^TL}=\mathbb{I_r}$ and 
+
 $$
 \Lambda=
 \begin{bmatrix}
@@ -36,7 +37,8 @@ $$
     & \ddots & \\
     & & \lambda_r
 \end{bmatrix}
-$$ is  an $r\times r$ diagonal matrix whose diagonal elements are positive and arranged in decreasing order
+$$ 
+is  an $r\times r$ diagonal matrix whose diagonal elements are positive and arranged in decreasing order
 
 ### SVD and Least Squares Solution
 SVD has the following important property, which is directly related to the PCA solution minimizing (2):
@@ -44,7 +46,8 @@ SVD has the following important property, which is directly related to the PCA s
 Let X be an $n \times p$ matrix, then
 $$
 f(\mathbb{FA^T})=||\mathbb{X-FA^T}||^2
-$$ is minimized for
+$$ 
+is minimized for
 $$
 \mathbb{FA^T}=\mathbb{K_m \Lambda_m L^T_m}
 $$
@@ -91,7 +94,8 @@ Rewrite the objective function:
 To minimize
 $$
 f(\mathbb{W})=||\mathbb{X-XWW^T}||^2
-$$ without $\mathbb{A}$.
+$$ 
+without $\mathbb{A}$.
 
 To minimize
 $$
@@ -108,7 +112,8 @@ where
 $$
 \tag{5}
 \mathbb{V=n^{-1}X^TX}
-$$ is the covariance matrix for centered $\mathbb{X}$, which can be solved by Eigendecomposition.
+$$ 
+is the covariance matrix for centered $\mathbb{X}$, which can be solved by Eigendecomposition.
 
 ## Eigendecomposition of a Covariance Matrix
 The singular value decomposition $\mathbb{X = K \Lambda L^T}$ leads to $\mathbb{X^TX}=\mathbb{L\Lambda^2 L^T}$. Use (5), we get
