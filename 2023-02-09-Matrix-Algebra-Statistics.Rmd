@@ -181,7 +181,7 @@ $$
 
 # Inter-variable Statistics {.tabset}
 ## Covariance
-The correlation between two variables j and k can be indicated by a **covariance**, which is defined as
+Covariance is a measure of dependency between random variables. The correlation between two variables j and k can be indicated by a **covariance**, which is defined as
 $$
 v_{jk}=\frac{1}{n}\sum_{i=1}^{n}(x_{ij}-\bar{x_j})(x_{ik}-\bar{x_k})
 $$
@@ -196,10 +196,21 @@ That is, the covariance between variables j and k is the `inner product` of the 
 
 The covariance of centered scores equals that of their raw scores.
 
+Empirical version of covariance is
+$$
+s_{jk}=\frac{1}{n}\sum_{i=1}^{n}(x_ij-\bar{x_j})(x_{ik}-\bar{x_k})
+$$
+For small n, say $n \le 20$, we should replace the factor $\frac{1}{n}$ by $\frac{1}{n-1}$ to correct for a small bias.
+
 ## Correlation Coefficients
 Though the covariance is a theoretically important statistic, an inconvenient property of the covariance is that its value does not allow us to easily capture `how strong` the positive/negative `correlations` between variables are.
 
-A correlation coefficient (r) between variables j and k is given by dividing the covariance by the square roots of the variances of variables j and k (i.e.,by the standard deviations of j and k).
+The correlation between two variables $x_{ij}$ and $x_{ik}$ is defined from the covariance
+
+$$
+\rho_{jk}=\frac{v_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}
+$$
+The true correlation $\rho$ is estimated by the empirical correlation $r$. An empirical correlation coefficient (r) between variables j and k is given by dividing the covariance by the square roots of the variances of variables j and k (i.e.,by the standard deviations of j and k).
 
 $$
 r_{jk}=\frac{v_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}=\frac{\vec{y_j}^T\vec{y_k}}{||\vec{y_j}||||\vec{y_k}||}
@@ -263,6 +274,11 @@ V^{\star}=\frac{1}{n-1}\mathbb{Y^TY}
 $$
 
 Its off-diagonal and diagonal elements are called unbiased covariances and unbiased variances, respectively.
+
+**Note**  
+Correlations and covariances measure only linear dependence. The quadratic dependence of $Y = X^2$ on $X$ is not reflected by these measures of dependence. If $x,y$ are independent, then $\rho_{xy}=v_{xy}=0$; but the converse is not true as examplified by the case of quadratic dependence.
+
+
 
 
 
