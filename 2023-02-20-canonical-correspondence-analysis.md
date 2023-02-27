@@ -1,6 +1,6 @@
 ---
 layout: post
-title: canonical & correspondence analysis
+title: Canonical & Correspondence analysis
 date: 2023-02-16 11:12:00-0400
 description: CCA
 tags: LinearAlgebra DataScience
@@ -11,7 +11,7 @@ categories:
 
 <div class="row">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/matrix blocks.png" title="An example of comparison between multiple regresion and pathway analysis" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="assets/img/matrix_blocks.png" title="An example of comparison between multiple regresion and pathway analysis" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
 
@@ -70,6 +70,7 @@ $$
 $$
 
 ## Canonical Correlation Analysis
+
 Let's consider an n-individuals-p-variables data matrix $$\mathbb{X=[X_1, X_2]}$$ consisting of two blocks $$\mathbb{X_1}=[\vec{x_{11}}, \cdots, \vec{x_{1p_1}}](n \times p_1)$$ and $$\mathbb{X_2}=[\vec{x_{21}}, \cdots, \vec{x_{2p_2}}](n \times p_1)$$. That is, the p variables in **X** are classified into a group of $$p_1, p_2$$ variables. 
 
 Canonical correlation analysis (CCA) with two blocks is formulated as minimizing
@@ -181,7 +182,7 @@ Minimizing (3) over **B, C** subject to the constrain is called *canonical discr
 
 Deleting **B** from the loss function (3) leading to the objective function of cluster analysis. 
 
--  the matrix **G**, which indicates the memberships of individuals to groups, is known in discriminant analysis
--  **G** is unknown and to be obtained in cluster analysis
--  Therefore, *discriminant analysis* is called *supervised classification*, while *cluster analysis* is called *unsupervised classification*.
+- the matrix **G**, which indicates the memberships of individuals to groups, is known in discriminant analysis
+- **G** is unknown and to be obtained in cluster analysis
+- Therefore, *discriminant analysis* is called *supervised classification*, while *cluster analysis* is called *unsupervised classification*.
 
