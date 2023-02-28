@@ -183,12 +183,13 @@ $$
 ## Covariance
 Covariance is a measure of dependency between random variables. The correlation between two variables j and k can be indicated by a **covariance**, which is defined as
 $$
-v_{jk}=\frac{1}{n}\sum_{i=1}^{n}(x_{ij}-\bar{x_j})(x_{ik}-\bar{x_k})
+\sigma_{jk}=Cov_{jk}=E[(x_{ij}-\bar{x_j})(x_{ik}-\bar{x_k})]
 $$
+
 to express it in vector form,
 $$
 \tag{8}
-v_{jk}=\frac{1}{n}\begin{pmatrix} x_{1j}-\bar{x_j} & \dots & x_{nj}-\bar{x_j}\end{pmatrix}
+\sigma_{jk}=\frac{1}{n}\begin{pmatrix} x_{1j}-\bar{x_j} & \dots & x_{nj}-\bar{x_j}\end{pmatrix}
 \begin{pmatrix} x_{1k}-\bar{x_k} \\ \vdots \\ x_{nk}-\bar{x_k}\end{pmatrix}=
 \frac{1}{n}(\mathbb{J}\vec{x_j})^T\mathbb{J}\vec{x_k}=\frac{1}{n}\vec{y_j}^T\vec{y_k}
 $$
@@ -209,12 +210,12 @@ Though the covariance is a theoretically important statistic, an inconvenient pr
 The correlation between two variables $x_{ij}$ and $x_{ik}$ is defined from the covariance
 
 $$
-\rho_{jk}=\frac{v_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}
+\rho_{jk}=\frac{\sigma_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}
 $$
 The true correlation $\rho$ is estimated by the empirical correlation $r$. An empirical correlation coefficient (r) between variables j and k is given by dividing the covariance by the square roots of the variances of variables j and k (i.e.,by the standard deviations of j and k).
 
 $$
-r_{jk}=\frac{v_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}=\frac{\vec{y_j}^T\vec{y_k}}{||\vec{y_j}||||\vec{y_k}||}
+r_{jk}=\frac{\sigma_{jk}}{\sqrt{var(\vec{x_j})}\sqrt{var(\vec{x_k})}}=\frac{\vec{y_j}^T\vec{y_k}}{||\vec{y_j}||||\vec{y_k}||}
 $$
 
 ## Variable Vectors & Correlations
