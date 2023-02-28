@@ -276,7 +276,7 @@ $$
 Its off-diagonal and diagonal elements are called unbiased covariances and unbiased variances, respectively.
 
 **Note**  
-Correlations and covariances measure only linear dependence. The quadratic dependence of $Y = X^2$ on $X$ is not reflected by these measures of dependence. If $x,y$ are independent, then $\rho_{xy}=v_{xy}=0$; but the converse is not true as examplified by the case of quadratic dependence.
+Correlations and covariances measure only linear dependence. The quadratic dependence of $Y = X^2$ on $X$ is not reflected by these measures of dependence. If $x,y$ are independent, then $\rho_{xy}=v_{xy}=0$; but the converse is not true as exemplified by the case of quadratic dependence.
 
 
 
