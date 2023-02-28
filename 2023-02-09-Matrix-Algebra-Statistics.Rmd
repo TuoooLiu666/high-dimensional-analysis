@@ -196,11 +196,12 @@ That is, the covariance between variables j and k is the `inner product` of the 
 
 The covariance of centered scores equals that of their raw scores.
 
-Empirical version of covariance is
+The true covariance is estimated by the empirical covariance $s_{jk}$:
 $$
 s_{jk}=\frac{1}{n}\sum_{i=1}^{n}(x_ij-\bar{x_j})(x_{ik}-\bar{x_k})
 $$
-For small n, say $n \le 20$, we should replace the factor $\frac{1}{n}$ by $\frac{1}{n-1}$ to correct for a small bias.
+For small n, say $n \le 20$, we should replace the factor $\frac{1}{n}$ by $\frac{1}{n-1}$ to correct for a small bias. In addition, covariance measures only linear dependence. That is if X and Y are independent, then $\rho_{X,Y}=Cov_{X,Y}=0$, in general, the converse is not true as exemplified by the covariance between X and its quadratic form. 
+
 
 ## Correlation Coefficients
 Though the covariance is a theoretically important statistic, an inconvenient property of the covariance is that its value does not allow us to easily capture `how strong` the positive/negative `correlations` between variables are.
