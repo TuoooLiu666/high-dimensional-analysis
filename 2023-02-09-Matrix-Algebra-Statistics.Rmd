@@ -72,43 +72,11 @@ $$
 \mathbb{X}=\begin{pmatrix} x_1 \dots x_j \dots x_p\end{pmatrix}
 $$
 - Distributions
+
 ## Averages
   
 $$
   \bar{\vec{x_j}}=\frac{1}{n}\vec{1^T}\vec{x_j}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 $$
 ## Centered Scores
 $$
