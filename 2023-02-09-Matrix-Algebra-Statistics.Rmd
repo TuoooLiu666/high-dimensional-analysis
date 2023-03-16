@@ -18,14 +18,17 @@ pacman::p_load(car, RColorBrewer)
 
 
 # Matrix operations {.tabset}
+
 ## sum of matrices (same size)
 $$
 \mathbb{A+B}=(a_{ij}+b_{ij})
 $$
+
 ## multiplication of matrix by scalar
 $$
 s\mathbb{A}=(s \times a_{ij})
 $$
+
 ## Inner Product and Vector Norm
 $$
 \begin{equation}
@@ -43,6 +46,7 @@ $||\vec{a}||$ is called norm of $\vec{a}$.
 
 
 ## Trace Operator and Matrix Norm
+
 A matrix with the number of rows equivalent to that of columns is said to be square. For a square matrix, the elements on the diagonal are called the diagonal elements of that matrix. Their sum is called a `trace`. 
 $$
 \begin{equation}
@@ -67,17 +71,19 @@ $$
 
 
 # Intra-variable Statistics {.tabset}
+
 ## Data matrix
 $$
 \mathbb{X}=\begin{pmatrix} x_1 \dots x_j \dots x_p\end{pmatrix}
 $$
+
 - Distributions
 
 ## Averages
-  
 $$
   \bar{\vec{x_j}}=\frac{1}{n}\vec{1^T}\vec{x_j}
 $$
+
 ## Centered Scores
 $$
 \vec{y_j}=\vec{x_j}-\begin{pmatrix} \bar{x_j} \\\vdots \\\bar{x_j} \\\vdots \\\bar{x_j}\end{pmatrix}=(\mathbb{I_n}-\frac{1}{n}\vec{1}_n\vec{1}_n^T)\vec{x_j}=\mathbb{J}\vec{x_j}
