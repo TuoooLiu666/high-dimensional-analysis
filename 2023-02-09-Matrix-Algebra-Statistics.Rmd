@@ -20,16 +20,19 @@ pacman::p_load(car, RColorBrewer)
 # Matrix operations {.tabset}
 
 ## sum of matrices (same size)
+
 $$
 \mathbb{A+B}=(a_{ij}+b_{ij})
 $$
 
 ## multiplication of matrix by scalar
+
 $$
 s\mathbb{A}=(s \times a_{ij})
 $$
 
 ## Inner Product and Vector Norm
+
 $$
 \begin{equation}
 \tag{1}
@@ -73,6 +76,7 @@ $$
 # Intra-variable Statistics {.tabset}
 
 ## Data matrix
+
 $$
 \mathbb{X}=\begin{pmatrix} x_1 \dots x_j \dots x_p\end{pmatrix}
 $$
@@ -80,24 +84,29 @@ $$
 - Distributions
 
 ## Averages
+
 $$
   \bar{\vec{x_j}}=\frac{1}{n}\vec{1^T}\vec{x_j}
 $$
 
 ## Centered Scores
+
 $$
 \vec{y_j}=\vec{x_j}-\begin{pmatrix} \bar{x_j} \\\vdots \\\bar{x_j} \\\vdots \\\bar{x_j}\end{pmatrix}=(\mathbb{I_n}-\frac{1}{n}\vec{1}_n\vec{1}_n^T)\vec{x_j}=\mathbb{J}\vec{x_j}
 $$
 mind the centering matrix $\mathbb{J}$, it has special properties $\mathbb{J^2}=\mathbb{JJ}=\mathbb{J}, \mathbb{J}=\mathbb{J}^T$.
 
 ## Variances-Standard Deviations
+
 $$
 var(\vec{x_j})=\frac{1}{n}\sum_{i=1}^{n}(x_{ij}-\bar{x_j})^2
 $$
 **Important**: rewrite it in algebra terms,
+
 $$
 var(\vec{x_j})=\frac{1}{n}(\mathbb{J}\vec{x_j})^T(\mathbb{J}\vec{x_j})=\frac{1}{n}\vec{x_j}^T\mathbb{J}\vec{x_j}
 $$
+
 $$
 \begin{equation}
 \tag{3}
