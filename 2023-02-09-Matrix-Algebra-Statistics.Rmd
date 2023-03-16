@@ -33,6 +33,7 @@ $$
 
 ## Inner Product and Vector Norm
 
+
 $$
 \begin{equation}
 \tag{1}
