@@ -24,7 +24,7 @@ wine <- read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/win
 scatterplotMatrix(wine[2:6])
 ```
 
-### profile plot
+### profile plot [cool]
 Another type of plot that is useful is a “profile plot”, which shows the variation in each of the variables, , by plotting the value of each of the variables for each of the samples.
 ```{r}
 makeProfilePlot <- function(mylist,names)
