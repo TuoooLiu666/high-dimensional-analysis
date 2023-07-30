@@ -1,2 +1,2 @@
-# statistical-learning
-This repo is dedicated to statistical learning techniques.
+# high-dimensional analysis
+This repo is dedicated to statistical techniques for high-dimension cases.
